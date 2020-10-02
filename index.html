@@ -53,6 +53,7 @@
 <nav class="navbar navbar-light bg-light fixed-top">
     <span class="navbar-brand">OpenShift Update Graph</span>
     <form class="form-inline">
+        <input id="graph-api" placeholder="Cincinnati URL" class="form-control" value="https://api.openshift.com/api/upgrades_info/v1/graph"></select>
         <select id="streams" class="form-control"></select>
     </form>
 </nav>
@@ -111,7 +112,7 @@
 <script type="text/javascript">
 
     const DEFAULT_STREAM = "stable-4.5";
-
+    
     let network;
     let network_data;
     let current_channel;
@@ -254,11 +255,15 @@
 
     function update_streams() {
         $.ajax({
-            url: "streams.json",
+            url: "https://api.github.com/repos/openshift/cincinnati-graph-data/contents/channels",
             type: "GET"
         })
             .done(function(data){
-                set_streams(data);
+                var streams = new Array()
+                for (i = 0; i < data.length; ++i) {
+                  streams.push(data[i].name.replace(/\.[^/.]+$/, ""));
+                }                
+                set_streams(streams);
             })
             .fail(function(r, e, ex){
                 failure("Failed to refresh streams: " + ex);
@@ -318,14 +323,13 @@
 
         current_channel = stream;
         set_info();
-
+        let cincinnati_url = $("#graph-api").val();
+        cincinnati_query = cincinnati_url + "?channel=" + current_channel
         $.ajax({
-            url: "streams/" + stream + ".json",
-            accepts: {
-                json: "application/json",
-            },
+            url: cincinnati_url + "?channel=" + current_channel,
             type: "GET",
-            dataType: "json",
+            contentType: "application/json",
+            dataType: "jsonp",
         })
             .done(function(data){
 
